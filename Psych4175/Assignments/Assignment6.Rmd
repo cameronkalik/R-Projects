@@ -1,0 +1,93 @@
+---
+title: "Assignment 6"
+author: "Cameron Kalik"
+output:
+  html_document:
+    df_print: paged
+---
+
+
+```{r setup, include = F}
+  library(readr)
+  library(ggplot2)
+  library(tidyverse)
+  
+  superheroData <- read_csv("../Data/superheroData.csv")
+  superheroData <- na.omit(superheroData)
+  superheroData[,c(2:6,9)] <- lapply(superheroData[,c(2:6,9)], factor)
+```
+
+
+### Data
+Here is the head of the data frame for reference!
+```{r data, echo = FALSE}
+head(superheroData)
+```
+### Descriptive Statistics
+```{r statistics}
+#Create table with specified summary statistics
+summaryStats <- superheroData %>%
+  group_by(superheroData$gender) %>%
+  summarise(meanIntelligence = mean(intelligence), emdianIntelligence = median(intelligence), varianceIntelligence = var(intelligence), standardDeviationIntelligence = sd(intelligence), meanStrength = mean(strength), medianStrength = median(strength), varianceStrength = var(strength), standardDeviationStrength = sd(strength), meanSpeed = mean(speed), medianSpeed = median(speed), varianceSpeed = var(speed), standardDeviationSpeed = sd(speed))
+summaryStats
+```
+
+
+```{r z-score and density plot}
+
+#Scale variables
+superheroData$scaledIntelligence <- scale(superheroData$intelligence) 
+superheroData$scaledStrength <- scale(superheroData$strength) 
+superheroData$scaledSpeed <- scale(superheroData$speed)
+
+#Convert data to long format
+superhero_scaled <- superheroData %>%
+  pivot_longer(cols = 17:19, names_to = "Attribute", values_to = "z_score")
+
+#Density plot
+ggplot(data = superhero_scaled, aes(x = z_score)) +
+  geom_density(aes(fill = Attribute), alpha =.2) +
+  geom_vline(aes(xintercept = mean(z_score), color = Attribute), show.legend = F, size = 1.5) +
+  scale_fill_discrete(name = "Variable", labels = c("Intelligence", "Speed", "Strength")) +
+  theme_bw() +
+  labs(x = "Z Score", y = "Density", title = "Standardized Scores of Superhero Attributes") +
+   geom_label(aes(x = mean(z_score),
+                y = 0.1),
+             label = "mean")
+```
+From our summary statistics table, we can see that there are differences in the summary statistics of intelligence, speed and strength when compared between males and females. From our density plot, we can see that the intelligence distribution has the most variance, and that all three distributions have the same mean. We needed to z-score the 3 variables before plotting because the values were measured with different scales. Standardizing allows us to analyze each variable within the context of its own scale.
+
+### Sampling Distributions
+```{r binomialData}
+set.seed(4175)
+
+# Let's create our dataset!
+# We will first have a column for the test score (getting a 0/20, 1/20, 2/20 etc.)
+# Then we will have the probability of getting that test score
+
+binomData <- data.frame(testScore = 0:20,
+                        prob = dbinom(x = 0:20, size = 20, prob = .25))
+
+#Plotting histogram
+ggplot(data = binomData, aes(x = testScore)) +
+  geom_col(aes(y = prob), fill = "cornflowerblue") +
+  scale_x_continuous(breaks = seq(0,20, by =1)) +
+  labs(title = "Probabilty of Test Scores", x = "Test Score", y = "Probability") +
+  theme_bw()
+
+#Calculating probabilities for binomial distribution
+pbinom(13, size = 20, prob = 0.25)
+pbinom(14, size = 20, prob = 0.25, lower.tail = F)
+
+```
+Yes, the calculated probabilities make sense. The histogram is left-skewed, which in this case means most of the data falls towards the left of the range of test scores from 0 to 20. We can see from the histogram that the combined probability of getting a score of 14 or higher is almost 0 and the combined probability of getting a score of 13 or lower is almost 1.
+
+```{r t-distribution}
+
+#Probabilities calculated for T distribution
+pt(.875,99) 
+1 - pt(2.3, 15) 
+
+
+```
+The probability of getting a value of .875 or smaller in the T distribution with 100 data points is 0.809. The probability of getting a value of 2.3 or larger with 16 data points in the T distribution is 0.02.

@@ -1,0 +1,9 @@
+library(tidyverse)
+library(psych)
+library(broom)
+library(RColorBrewer)
+library(ggpubr)
+library(knitr)
+library(kableExtra)
+?aes
+?xlab

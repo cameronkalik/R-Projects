@@ -1,0 +1,125 @@
+---
+title: "Assignment 8"
+author: Cameron Kalik
+output: 
+  html_document: 
+    df_print: paged
+---
+
+
+```{r setup, include = F}
+library(readr)
+library(ggplot2)
+library(tidyverse)
+library(psych)
+  
+  superheroData <- read_csv("../Data/superheroData.csv")
+  superheroData <- na.omit(superheroData)
+  superheroData[,c(2:6,9)] <- lapply(superheroData[,c(2:6,9)], factor)
+```
+
+
+### Data
+Here is the head of the data frame for reference!
+```{r data, echo = FALSE}
+head(superheroData)
+```
+
+### Correlations
+
+```{r correlations}
+correlation <- cor(superheroData$height, superheroData$weight)
+correlation
+cor.test(superheroData$height, superheroData$weight)
+psych::corr.test(superheroData$height, superheroData$weight)
+  
+```
+I like the cor.test function the best since it gives the most information pertaining to the value of the correlation. Instead of just giving the value of the correlation, the function gives you a confidence interval that the correlation is between two values and a probability that the true correlation is equal to 0.
+
+### Correlation Graphs
+
+```{r correlation graphs}
+
+ggplot(data = superheroData, aes(x = height, y = weight)) +
+  geom_point(color = "cornflowerblue") +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_bw() +
+  labs(x = "Superhero Height", y = "Superhero Weight", title = "Correlation between Superhero Height and Weight") +
+   geom_label(x = 500,
+                y = 150,
+             label = "correlation = 0.16")
+
+#scale variables
+superheroData$scaled_height <- scale(superheroData$height)
+superheroData$scaled_weight <- scale(superheroData$weight) 
+  
+ggplot(data = superheroData, aes(x = scaled_height, y = scaled_weight)) +
+  geom_point(color = "cornflowerblue") +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_bw() +
+  labs(x = "Superhero Height (scaled)", y = "Superhero Weight (scaled)", title = "Correlation between Scaled Superhero Height and Weight") +
+   geom_label(aes(x = 4,
+                y = 1),
+             label = "correlation = 0.16") +
+  xlim(min(superheroData$scaled_height), max(superheroData$scaled_height)) +
+  ylim(min(superheroData$scaled_weight), max(superheroData$scaled_weight))
+
+```
+
+The line of best fit for both graphs representing the correlation between height and weight is the same. This is because the formula for correlation already standardizes the variables, so finding the correlation of two standardized variables will be the same as the correlation of two unstandardized variables.
+
+### Regression and Correlation
+
+```{r regression}
+
+#Intelligence = outcome variable
+#Strength = continuous predictor variable 1
+#Publisher = categorical predictor variable 1
+#Gender = categorical predictor variable 2
+
+corr_si <- cor(superheroData$intelligence, superheroData$strength)
+
+model_1 <- lm(data = superheroData, superheroData$intelligence~superheroData$strength)
+
+#standardize variables
+superheroData$scaled_intelligence <- scale(superheroData$intelligence) 
+superheroData$scaled_strength <- scale(superheroData$strength)
+
+model_2 <- lm(data = superheroData, superheroData$scaled_intelligence~superheroData$scaled_strength)
+
+print(corr_si)
+summary(model_1)
+summary(model_2)
+
+```
+The correlation between intelligence and strength = 0.1556. We can also see that this is the same value as the slope of the standardized linear regression model (given by superheroData$scaled_strength). The slope of the unstandardized model is estimated to be 0.09. The intercept of the standardized model is estimated to be approximately 0 and the intercept of the unstandardized model is estimated to be 61.78
+
+### Regression and Anova
+
+```{r anova}
+#One way Anova and single variable categorical linear regression
+aov1 <- aov(superheroData$intelligence~superheroData$publisher, data = superheroData)
+
+summary(aov1)
+
+model3 <- lm(data = superheroData, superheroData$scaled_intelligence~superheroData$publisher)
+
+summary(model3)
+
+#Two way Anova and multivariate categorical linear regression
+aov2 <- aov(superheroData$intelligence~superheroData$publisher + superheroData$gender, data = superheroData)
+
+summary(aov2)
+
+model4 <- lm(data = superheroData, superheroData$scaled_intelligence~superheroData$publisher + superheroData$gender)
+
+summary(model4)
+
+```
+For the one-way ANOVA, the probability that the calculated F statistic as shown by the ANOVA test and linear regression model is in the F distribution is 0.001. Thus, for the standard alpha level of 0.05, we can conclude that there is a significant difference in the average superhero intelligence level based on the comic book publisher. In regression terms, we can say that the model fits the data, since there is significantly more variance between groups than there is within groups. So the model passes the ominibus test.
+The coefficients of our linear regression model reveal to us the relative differences in superhero intelligence between comic book publishers. For instance, the average difference in superhero intelligence between Marvel Comics and all other comics is 1.24.
+
+For the two-way ANOVA, we can see that the p value for gender is 0.85, so we can conclude that there is not a significant difference in the average superhero intelligence level based on gender. However, there is a significant significant difference in the average superhero intelligence level based on the comic book publisher, as concluded in the last ANOVA.
+Both categorical factors are used as predictors in our linear regression model. Our p value is 0.002, which indicates that for gender and publisher combined, there is more variance between groups than within groups. Thus our model fits the data and passes the omnibus test.
+The coefficients of our linear regression model again reveal to us the relative differences in superhero intelligence between comic book publishers but also genders. For instance, we can see that there is an average 0.03 increase in superhero intelligence if the superhero is male instead of female.
+
